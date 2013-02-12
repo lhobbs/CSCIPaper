@@ -1,7 +1,7 @@
 /**
  *
  */
-//package jsy.lab2
+package jsy.lab2
 
 /**
  * @author Bor-Yuh Evan Chang

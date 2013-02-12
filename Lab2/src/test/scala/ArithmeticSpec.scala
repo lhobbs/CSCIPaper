@@ -32,7 +32,7 @@ class ArithmeticSpec extends FlatSpec {
     assert(e3 === N(1.6))
   }
 
-  "Arithmetic Operators" may "produce non-intuitive solutions given differing expression types" in {
+  "Arithmetic Operators" should "produce non-intuitive solutions given differing expression types" in {
     val e1 = B(true)
     val e2 = N(7)
     assert(evaluate(Binary(Plus,e1,e2)) == N(8))

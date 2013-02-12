@@ -116,9 +116,9 @@ class ComparisonSpec extends FlatSpec {
     assert(e3 === B(true))
   }
 
-  "Comparisons" may "produce non-intuitive results given the expressions given" in {
+  "Comparisons" should "produce non-intuitive results given the expressions given" in {
     val e1 = N(5)
     val e2 = Undefined
-    assert(evaluate(Binary(Eq,e1,e2) === B(false))
+    assert(evaluate(Binary(Eq,e1,e2)) === B(false))
   } 
 }

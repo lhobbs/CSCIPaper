@@ -13,7 +13,7 @@ class AndOrSpec extends FlatSpec {
     assert(evaluate(Binary(And,f,f)) === f)
   } 
  
-  "And" may "return non-intuitive results from differing types" in {
+  "And" should "return non-intuitive results from differing types" in {
     val e1 = N(0)
     val e2 = B(true)
     val e3 = evaluate(Binary(And, e1, e2))
@@ -29,7 +29,7 @@ class AndOrSpec extends FlatSpec {
     assert(evaluate(Binary(Or,f,f)) === f)
   }
 
-  "Or" may "return non-intuitive results from differing types" in {
+  "Or" should "return non-intuitive results from differing types" in {
     val e1 = N(5)
     val e2 = B(false)
     val e3 = evaluate(Binary(Or, e1, e2))

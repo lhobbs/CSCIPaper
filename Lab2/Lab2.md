@@ -22,4 +22,3 @@ C) The + sign is left associative, and has a higher precedence than >. In the ex
 D) In scala, - has higher precedence than <<. This can be shown by the two expressions 2 - 1 << 2 and 2 << 1 - 1. In the first expression, scala evaluates to 2, which shows precedence of the (-). To ensure it wasn't assosiativity causing this result, we tried the second expression, which also evaluated to 2. If << took precedence, the expression results would be 0 and 3 respectively.
 
 E) float ::= Number . Number E Number
-

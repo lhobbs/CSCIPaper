@@ -287,7 +287,7 @@ object Lab3 {
 
      case Call(e1, e2) if( isValue(e1) && isValue(e2)) => (e1, e2) match{
         case (Function(None, x, e1), e2) => substitute(e1, e2, x)
-        case (Function(Some(x1), x2, e1), e2) => substitute(e2, e1, x1) 
+        case (Function(Some(x1), x2, e1), e2) if isValue(e1) => substitute(e2, e1, x1) 
         case _ => throw new DynamicTypeError(e)
       }
       

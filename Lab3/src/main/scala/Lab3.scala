@@ -179,8 +179,6 @@ object Lab3 {
   
   /* Small-Step Interpreter with Static Scoping */
   
-  /* so I think this is basically the extend for small step 
-   * but I have no idea what to do to make it work right */
   def substitute(e: Expr, v: Expr, x: String): Expr = { 
     require(isValue(v))
     /* Simple helper that calls substitute on an expression
@@ -192,9 +190,9 @@ object Lab3 {
       case Print(e1) => Print(subst(e1))
       case Binary(bop,e1,e2) => Binary(bop, subst(e1), subst(e2))
       case Unary(uop, e1) => Unary(uop, subst(e1))
-      /* passes 6 tests */
+     
       case Var(y) => if (x==y) {v} else { e }
-      /* passes 2 tests */
+
       case ConstDecl(y, e1, e2) => if (x==y){ ConstDecl(x, subst(e1), e2) } else{ ConstDecl(y,subst(e1),subst(e2)) }
       
       case Call(e1, e2) => Call(subst(e1), subst(e2))
@@ -301,33 +299,15 @@ object Lab3 {
         case Not => Unary(Not, step(e1))
       }
       
-      //--------------------------------------------------------------------//
       case Binary(Plus, e1, e2) if !isValue(e1) => Binary(Plus, step(e1), e2)
-      
-      
       case Binary(Minus, e1, e2) if !isValue(e1) => Binary(Minus, step(e1), e2)
       case Binary(Times, e1, e2) if !isValue(e1) => Binary(Times, step(e1), e2)
       case Binary(Div, e1, e2) if !isValue(e1) => Binary(Div, step(e1), e2)
-      
-      //--------------------------------------------------------------------//
 
-      case Binary(Plus, e1, e2) if !isValue(e2) => Binary(Plus, e1, step(e2))
-      
-      
+      case Binary(Plus, e1, e2) if !isValue(e2) => Binary(Plus, e1, step(e2))     
       case Binary(Minus, e1, e2) if !isValue(e2) => Binary(Minus, e1, step(e2))
       case Binary(Times, e1, e2) if !isValue(e2) => Binary(Times, e1, step(e2))
       case Binary(Div, e1, e2) if !isValue(e2) => Binary(Div, e1, step(e2))
-      
- 
-     /*case Binary(Eq, e1, e2) if !isValue(e1) => e1 match {
-        case Function(p, x, ex) => throw new DynamicTypeError(e)
-        case _ => Binary(Eq, step(e1), e2)
-      }
-      
-      case Binary(Ne, e1, e2) if !isValue(e1) => e1 match{
-        case Function(p, x, ex) => throw new DynamicTypeError(e)
-        case _ => Binary(Ne, step(e1), e2)
-      }*/
       
       case Binary(Eq, e1, e2) if !isValue(e2) => e1 match{
         case Function(p, x, ex) => throw new DynamicTypeError(e)
@@ -355,8 +335,6 @@ object Lab3 {
       
       case Binary(Ge, e1, e2) if !isValue(e2) => Binary(Ge, e1, step(e2))
        
-      //-----------------------------------------------------------------// 
-      
       case Binary(And, e1, e2) => Binary(And, step(e1), e2)
       
       case Binary(Or, e1, e2) => Binary(Or, step(e1), e2)
@@ -365,17 +343,13 @@ object Lab3 {
       
       case If(e1, e2, e3) => If(step(e1), e2, e3)
       
-      
       case ConstDecl(x, e1, e2) if (!isValue(e1))=> ConstDecl(x, step(e1), e2)
-      case ConstDecl(x, e1, e2) if (!isValue(e2)) => ConstDecl(x, e1, step(e2))
       
-      /* Works, I think */
       case Call(e1, e2) if !isValue(e1) => Call(step(e1), e2)
       
       case Call(e1, e2) if !isValue(e2) => Call(e1, step(e2))
       
       case _ => throw new DynamicTypeError(e)
-      //case _ => throw new UnsupportedOperationException
     }
   }
   

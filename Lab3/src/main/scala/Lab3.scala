@@ -3,7 +3,7 @@ object Lab3 {
   
   /*
    * CSCI 3155: Lab 3 
-   * <Your Name>
+   * <Lisa Hobbs>
    * 
    * Partner: <Your Partner's Name>
    * Collaborators: <Any Collaborators>
@@ -158,10 +158,7 @@ object Lab3 {
       /* I added this function, it doesn't work totally yet though :( */
       case Call(e1, e2) => (eval(env,e1), e2) match{
         case (Function(None, x, e1), e2) => val env2 = extend(env, x, eval(env,e2)); eval(env2, e1) //?
-        /* This looks more like the judgments I think */
-        //case (Function(Some(x1), x2, e1), e2) =>  val env2 = extend(env, x1, eval(env,e1)); val env3 = extend(env2, x2, eval(env,e2)); eval(env3, e1);
-        /* this passes more tests, so I don't know :/ */
-        case (Function(Some(x1), x2, ex), e2) =>  val env2 = extend(env, x2, eval(env,e2)); val env3 = extend(env2, x2, eval(env,e2)); eval(env3, ex);
+        case (Function(Some(x1), x2, ex), e2) =>  val env2 = extend(env, x2, eval(env,e1)); val env3 = extend(env2, x2, eval(env,e2)); eval(env3, ex);
         case _ => throw new DynamicTypeError(e)
       }
         

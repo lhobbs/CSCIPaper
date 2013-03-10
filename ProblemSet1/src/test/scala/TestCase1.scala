@@ -18,10 +18,12 @@ class ProblemSet1Spec extends FlatSpec  {
        List('j, 'k, 'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i))
   }
   
-  "p = A == B join[1,2,3], [3,2,1]" should "return [1,1],[2,2],[3,3]" in {
-    p = A == B
-    assert(join(List(1,2,3), List(3,2,1), p)) == List((1,1),(2,2),(3,3))
-  }
+  /*"p = A == B join[1,2,3], [3,2,1]" should "return [1,1],[2,2],[3,3]" in {
+    val A = List(1,2,3);
+    val B = List(3,2,1)
+    def predicate(A:List[], B:List[]):Boolean = { A == B };
+    assert(join(List(1,2,3), List(3,2,1), predicate(A,B))) == List((1,1),(2,2),(3,3))
+  }*/
   
   
 

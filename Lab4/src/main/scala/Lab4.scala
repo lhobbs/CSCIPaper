@@ -3,9 +3,9 @@ object Lab4 {
   
   /*
    * CSCI 3155: Lab 4
-   * <Your Name>
+   * <Lisa Hobbs>
    * 
-   * Partner: <Your Partner's Name>
+   * Partner: <Daniel Morrissey>
    * Collaborators: <Any Collaborators>
    */
 
@@ -38,8 +38,22 @@ object Lab4 {
     case h1 :: (t1 @ (h2 :: _)) => throw new UnsupportedOperationException
   }
   
+  /*(1,1,1,2,2,3,3) 1::3 --->  (1,2,3)
+   * (1,1,1,2,2,3,3,1) --> (1,2,3,1)
+   * list (1,1,1,2,2,3,3) --> h 3 --> acc (3) --> return acc
+   * list (1,1,1,2,2,3) --> h 3 --> acc (3) --> return acc
+   * list (1,1,1,2,2) --> h 2 --> acc (2,3) --> return acc 
+   */
   def compressFold[A](l: List[A]): List[A] = l.foldRight(Nil: List[A]){
-    (h, acc) => throw new UnsupportedOperationException
+    /* h is element in list
+     * acc is accumulator
+     * h and acc are parameters we pass to the higher order function 
+     * list can be expressed in by h::t, h is head of list, t is tail
+     * nill means empty list */
+    (h, acc) => acc match{
+      case h1::t => if( h == h1 ) acc else h::acc
+      case Nil => h::acc
+    }
   }
   
   def testCompress(compress: List[Int] => List[Int]): Boolean =
@@ -138,6 +152,62 @@ object Lab4 {
       case Unary(Neg, e1) => typ(e1) match {
         case TNumber => TNumber
         case tgot => err(tgot, e1)
+      }
+      
+      case Binary(Plus, e1, e2) => (typ(e1),typ(e2)) match{ //=> ?
+        case (TNumber,TNumber)=>TNumber
+        case (TString,TString)=>TString
+        case (t1,t2)=>err(t1,e1)
+      }
+            case Binary(Minus, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TNumber
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Times, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TNumber
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Div, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TNumber
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Ge, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TBool
+        case (TString, TString) => TBool
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Gt, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TBool
+        case (TString, TString) => TBool
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Le, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TBool
+        case (TString, TString) => TBool
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Lt, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TNumber, TNumber) => TBool
+        case (TString, TString) => TBool
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Eq, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
+        case (t1, TFunction(p1, p2)) => err(t1, e1)
+        case (t1, t2) => TBool
+      }
+      case Binary(Ne, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
+        case (t1, TFunction(p1, p2)) => err(t1, e1)
+        case (t1, t2) => TBool
+      }
+      case Binary(And, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TBool, TBool) => TBool
+        case (t1, t2) => err(t1, e1)
+      }
+      case Binary(Or, e1, e2) => (typ(e1), typ(e2)) match{
+        case (TBool, TBool) => TBool
+        case (t1, t2) => err(t1, e1)
       }
       case Function(p, params, tann, e1) => {
         // Bind to env1 an environment that extends env with an appropriate binding if

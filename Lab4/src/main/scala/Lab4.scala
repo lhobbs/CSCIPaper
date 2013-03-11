@@ -34,8 +34,8 @@ object Lab4 {
   /* Lists */
   
   def compressRec[A](l: List[A]): List[A] = l match {
-    case Nil | _ :: Nil => throw new UnsupportedOperationException
-    case h1 :: (t1 @ (h2 :: _)) => throw new UnsupportedOperationException
+    case Nil | _ :: Nil => Nil //???
+    case h1 :: (t1 @ (h2 :: _)) => h1::compressRec(t1.dropWhile(_==h1))
   }
   
   /*(1,1,1,2,2,3,3) 1::3 --->  (1,2,3)
@@ -58,8 +58,8 @@ object Lab4 {
   
   def testCompress(compress: List[Int] => List[Int]): Boolean =
     compress(List(1, 2, 2, 3, 3, 3)) == List(1, 2, 3)
-  //assert(testCompress(compressRec))
-  //assert(testCompress(compressFold))
+  assert(testCompress(compressRec))
+  assert(testCompress(compressFold))
   
   def mapFirst[A](f: A => Option[A])(l: List[A]): List[A] = l match {
     case Nil => throw new UnsupportedOperationException
@@ -85,8 +85,8 @@ object Lab4 {
     
     def foldLeft[A](z: A)(f: (A, Int) => A): A = {
       def loop(acc: A, t: Tree): A = t match {
-        case Empty => throw new UnsupportedOperationException
-        case Node(l, d, r) => throw new UnsupportedOperationException
+        case Empty => acc//throw new UnsupportedOperationException
+        case Node(l, d, r) => loop(acc,l)//throw new UnsupportedOperationException
       }
       loop(z, this)
     }
@@ -154,22 +154,22 @@ object Lab4 {
         case tgot => err(tgot, e1)
       }
       
-      case Binary(Plus, e1, e2) => (typ(e1),typ(e2)) match{ //=> ?
+      case Binary(Plus, e1, e2) => (typ(e1),typ(e2)) match{ 
         case (TNumber,TNumber)=>TNumber
         case (TString,TString)=>TString
-        case (t1,t2)=>err(t1,e1)
+        case (t1,t2)=>err(t1,e1); err(t2, e2) //need both errors or just one?
       }
-            case Binary(Minus, e1, e2) => (typ(e1), typ(e2)) match{
+      case Binary(Minus, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1)
+        case (t1, t2) => err(t1, e1); err(t2, e1)
       }
       case Binary(Times, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1)
+        case (t1, t2) => err(t1, e1); err(t2, e2)
       }
       case Binary(Div, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1)
+        case (t1, t2) => err(t1, e1); err(t2,e2)
       }
       case Binary(Ge, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TBool
@@ -209,6 +209,14 @@ object Lab4 {
         case (TBool, TBool) => TBool
         case (t1, t2) => err(t1, e1)
       }
+      case Binary(Seq, e1, e2) => (typ(e1), typ(e2)) match{
+        case (t1, t2) => t2
+      }
+      case If(e1, e2, e3) => (typ(e1), typ(e2), typ(e3)) match{
+        case (TBool, t2, t3) => if( t2 == t3) t2 else err(t2, e2)
+        case (t1, t2, t3) => err(t1, e1)
+      }
+      
       case Function(p, params, tann, e1) => {
         // Bind to env1 an environment that extends env with an appropriate binding if
         // the function is potentially recursive.
@@ -287,12 +295,16 @@ object Lab4 {
       case Binary(Seq, v1, e2) if isValue(v1) => e2
       case Binary(Plus, S(s1), S(s2)) => S(s1 + s2)
       case Binary(Plus, N(n1), N(n2)) => N(n1 + n2)
+      case Binary(Minus, N(n1), N(n2)) => N(n1 - n2)
+      case Binary(Times, N(n1), N(n2)) => N(n1*n2)
+      case Binary(Div, N(n1), N(n2)) => N(n1/n2)
       case Binary(bop @ (Lt|Le|Gt|Ge), v1, v2) if isValue(v1) && isValue(v2) => B(inequalityVal(bop, v1, v2))
       case Binary(Eq, v1, v2) if isValue(v1) && isValue(v2) => B(v1 == v2)
       case Binary(Ne, v1, v2) if isValue(v1) && isValue(v2) => B(v1 != v2)
       case Binary(And, B(b1), e2) => if (b1) e2 else B(false)
       case Binary(Or, B(b1), e2) => if (b1) B(true) else e2
       case ConstDecl(x, v1, e2) if isValue(v1) => substitute(e2, v1, x)
+      case If(B(e1), e2, e3) => if (e1) e2 else e3
       /*** Fill-in more cases here. ***/
         
       /* Inductive Cases: Search Rules */
@@ -302,6 +314,7 @@ object Lab4 {
       case Binary(bop, e1, e2) => Binary(bop, step(e1), e2)
       case If(e1, e2, e3) => If(step(e1), e2, e3)
       case ConstDecl(x, e1, e2) => ConstDecl(x, step(e1), e2)
+      case Call(e1,e2) => Call(step(e1), e2)
       /*** Fill-in more cases here. ***/
       
       /* Everything else is a stuck error. */

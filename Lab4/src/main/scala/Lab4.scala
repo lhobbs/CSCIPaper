@@ -34,7 +34,7 @@ object Lab4 {
   /* Lists */
   
   def compressRec[A](l: List[A]): List[A] = l match {
-    case Nil | _ :: Nil => Nil //???
+    case Nil | _ :: Nil => l //???
     case h1 :: (t1 @ (h2 :: _)) => h1::compressRec(t1.dropWhile(_==h1))
   }
   
@@ -62,8 +62,11 @@ object Lab4 {
   assert(testCompress(compressFold))
   
   def mapFirst[A](f: A => Option[A])(l: List[A]): List[A] = l match {
-    case Nil => throw new UnsupportedOperationException
-    case h :: t => throw new UnsupportedOperationException 
+    case Nil => l
+    case h :: t => f(h) match {
+      case Some(a) => a::t
+      case _ => h::mapFirst(f)(t)
+    } 
   }
   
   def testMapFirst(mapFirst: (Int => Option[Int]) => List[Int] => List[Int]): Boolean =
@@ -79,14 +82,14 @@ object Lab4 {
     } 
     
     def map(f: Int => Int): Tree = this match {
-      case Empty => throw new UnsupportedOperationException
-      case Node(l, d, r) => throw new UnsupportedOperationException
+      case Empty => Empty
+      case Node(l, d, r) => { Node(l.map(f), f(d), r.map(f))}
     }
     
     def foldLeft[A](z: A)(f: (A, Int) => A): A = {
       def loop(acc: A, t: Tree): A = t match {
-        case Empty => acc//throw new UnsupportedOperationException
-        case Node(l, d, r) => loop(acc,l)//throw new UnsupportedOperationException
+        case Empty => acc 
+        case Node(l, d, r) => { loop(f(acc,d), l); loop(f(acc,d),r)}
       }
       loop(z, this)
     }
@@ -113,16 +116,17 @@ object Lab4 {
   
   def testIncr(incr: Tree => Tree): Boolean =
     incr(treeFromList(List(1,2,3))) == treeFromList(List(2,3,4))
-  //assert(testIncr(incr))
+  assert(testIncr(incr))
   
   def sum(t: Tree): Int = t.foldLeft(0){ (acc, d) => acc + d }
   
   def testSum(sum: Tree => Int): Boolean =
     sum(treeFromList(List(1,2,3))) == 6
-  //assert(testSum(sum))
+  assert(testSum(sum))
   
   def strictlyOrdered(t: Tree): Boolean = {
     val (b, _) = t.foldLeft((true, None: Option[Int])){
+      
       throw new UnsupportedOperationException
     }
     b
@@ -135,7 +139,8 @@ object Lab4 {
   /* Type Inference */
   
   def hasFunctionTyp(t: Typ): Boolean = t match {
-    case _ => throw new UnsupportedOperationException
+    case TFunction(p, z) => true
+    case _ => false
   }
   
   def typeInfer(env: Map[String,Typ], e: Expr): Typ = {
@@ -153,23 +158,26 @@ object Lab4 {
         case TNumber => TNumber
         case tgot => err(tgot, e1)
       }
-      
+      case Unary(Not, e1) => typ(e1) match{
+        case TBool => TBool
+        case t1 => err(t1, e1)
+      }
       case Binary(Plus, e1, e2) => (typ(e1),typ(e2)) match{ 
         case (TNumber,TNumber)=>TNumber
         case (TString,TString)=>TString
-        case (t1,t2)=>err(t1,e1); err(t2, e2) //need both errors or just one?
+        case (t1,t2)=>err(t1,e1)
       }
       case Binary(Minus, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1); err(t2, e1)
+        case (t1, t2) => err(t1, e1)
       }
       case Binary(Times, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1); err(t2, e2)
+        case (t1, t2) => err(t1, e1)
       }
       case Binary(Div, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
-        case (t1, t2) => err(t1, e1); err(t2,e2)
+        case (t1, t2) => err(t1, e1)
       }
       case Binary(Ge, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TBool
@@ -194,12 +202,12 @@ object Lab4 {
       case Binary(Eq, e1, e2) => (typ(e1), typ(e2)) match{
         case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
         case (t1, TFunction(p1, p2)) => err(t1, e1)
-        case (t1, t2) => TBool
+        case (t1, t2) => if (t1 == t2) TBool else err(t1, e1)
       }
       case Binary(Ne, e1, e2) => (typ(e1), typ(e2)) match{
         case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
         case (t1, TFunction(p1, p2)) => err(t1, e1)
-        case (t1, t2) => TBool
+        case (t1, t2) => if (t1 == t2) TBool else err(t1,e1)
       }
       case Binary(And, e1, e2) => (typ(e1), typ(e2)) match{
         case (TBool, TBool) => TBool
@@ -228,11 +236,17 @@ object Lab4 {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with bindings for params.
-        val env2 = throw new UnsupportedOperationException
+        val env2 = (p, tann) match {
+          case (Some(f), Some(rt)) =>
+            val tprime = TFunction(params, rt)
+            env1 + (f -> tprime)
+          case _ => err(TUndefined, e1)
+        }
+        //val env2 = err(TUndefined, e1)
         // Match on whether the return type is specified.
         tann match {
-          case None => throw new UnsupportedOperationException
-          case Some(rt) => throw new UnsupportedOperationException
+          case None => TUndefined
+          case Some(rt) => rt
         }
       }
       case _ => throw new UnsupportedOperationException
@@ -305,6 +319,28 @@ object Lab4 {
       case Binary(Or, B(b1), e2) => if (b1) B(true) else e2
       case ConstDecl(x, v1, e2) if isValue(v1) => substitute(e2, v1, x)
       case If(B(e1), e2, e3) => if (e1) e2 else e3
+      case Call(e1, args) if isValue(e1) => e1 match{
+        case Function(None, params, tann, ex) => params match{
+          case x::Nil => x match{ //make work for all elements in list
+            case (s, typ) => substitute(ex, e1, s);
+            case _ => throw new UnsupportedOperationException
+          }
+          case _ => throw new UnsupportedOperationException
+        }
+        case Function(Some(f), params, tann, ex) => params match{
+          case x::Nil => x match{ //make work for all elements in list
+            case (s, typ) => substitute(substitute(ex, e1, f), e1, s);
+            case _ => throw new UnsupportedOperationException
+          }
+          case _ => throw new UnsupportedOperationException
+        }
+        case _ => throw new DynamicTypeError(e)
+      }
+      case Obj(fields) => fields.values match{ //need??
+        case x::t => val f = " "; substitute(e,x,f)//??
+      }
+      //breaks a test
+      //case GetField(e1, f) if isValue(e1) => substitute(e, e1, f) //???
       /*** Fill-in more cases here. ***/
         
       /* Inductive Cases: Search Rules */
@@ -314,7 +350,26 @@ object Lab4 {
       case Binary(bop, e1, e2) => Binary(bop, step(e1), e2)
       case If(e1, e2, e3) => If(step(e1), e2, e3)
       case ConstDecl(x, e1, e2) => ConstDecl(x, step(e1), e2)
-      case Call(e1,e2) => Call(step(e1), e2)
+      case Call(e1,e2) if !isValue(e1)=> Call(step(e1), e2)
+      case Call(e1, args) if isValue(e1) => e1 match{ //????
+        case Function(None, params, tann, ex) => params match{
+          case x::Nil => x match{ //make work for all elements in list
+            case (s, typ) => substitute(step(ex), e1, s);
+            case _ => throw new UnsupportedOperationException
+          }
+          case _ => throw new UnsupportedOperationException
+        }
+        case Function(Some(f), params, tann, ex) => params match{
+          case x::Nil => x match{ //make work for all elements in list
+            case (s, typ) => substitute(substitute(step(ex), e1, f), e1, s);
+            case _ => throw new UnsupportedOperationException
+          }
+          case _ => throw new UnsupportedOperationException
+        }
+        case _ => throw new DynamicTypeError(e)
+      }
+      //breaks test case
+      //case GetField(e1, f) => GetField(step(e1), f)
       /*** Fill-in more cases here. ***/
       
       /* Everything else is a stuck error. */

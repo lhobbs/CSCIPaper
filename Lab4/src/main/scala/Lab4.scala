@@ -124,39 +124,14 @@ object Lab4 {
     sum(treeFromList(List(1,2,3))) == 6
   assert(testSum(sum))
   
-  /*def strictlyOrdered(t: Tree): Boolean = {
-    val (b, _) = t.foldLeft((true, None: Option[Int])){
-       t match{
-        case Empty => (acc, d) => (true, None)
-        case Node(l,d,r) =>  if(strictlyOrdered(l)){ val a2 = (strictlyOrdered(r),None); (a2, d) => a2 } else { val a3 = (false,None); (a3, d) => a3 } //Nope :(
-        case _ => (acc, d) => acc
-      }
-    }
-    b
-  }*/
+  
   def strictlyOrdered(t: Tree): Boolean = {
     val (b, _) = t.foldLeft((true, None: Option[Int])){
-       t match{
-        case Empty => (acc, d) => (true, None)
-        case Node(l,d,r) =>  {
-            var ret = (true, None:Option[Int]);
-            l match {
-                case Node(x, y, z) => { 
-                    r match {
-                        case Node(a, b, c) => if(y >= d || d >= b) ret = (false, None);
-                        case Empty => if(y >= d) ret = (false, None);
-                    }
-                }
-                case Empty => r match {
-                    case Node(a, b, c) => if (d >= b) ret = (false, None);
-                    case Empty => ret = (true, None);
-                }
-            }
-            
-            ret = (ret._1 && strictlyOrdered(l) && strictlyOrdered(r), None);
-            
-           (a, d) => a;
-        }
+    	(acc, otherstuff) => acc match{
+    	case (false, _) => (false, None)
+        case (bool, None) => (bool, Some(otherstuff))
+        case (bool, Some(i)) => if (i >= otherstuff) (false, Some(otherstuff)) else (true, Some(otherstuff))
+        
       }
     }
     b
@@ -261,13 +236,11 @@ object Lab4 {
       case Obj(m1) => { 
     	  val m2 = for((x, ex) <- m1) yield x -> typ(ex);
     	  TObj(m2)
-      }
-      
+      }      
       case GetField(e1, f) =>  typ(e1) match{
         case TObj(fields) => { val fields2 = fields.getOrElse(f, err(typ(e1), e1)); fields2}
         case t1 =>  TUndefined// err(t1, e1)
-      }
-      
+      }      
       case Call(e1, args) => 
         typ(e1) match{ 
           case TFunction(params, rt) => if (params.length != args.length) { err(typ(e1), e1)}
@@ -277,7 +250,7 @@ object Lab4 {
               if (a2 == p2) { rt }
               else { err(typ(e1), e1)}
             }  
-          case _ =>err(typ(e1), e1)//println(typ(e1)); TUndefined//
+          case _ => err(typ(e1), e1)
         
       }      
     
@@ -307,7 +280,7 @@ object Lab4 {
        
         // Match on whether the return type is specified.
         tann match {
-          case None =>  typeInfer(env2,e1)
+          case None =>  TFunction(params, typeInfer(env2,e1))
           case Some(rt) if (rt == typeInfer(env2, e1)) => TFunction(params, rt) 
           case Some(rt) => err(typ(e1), e1)
         }

@@ -310,13 +310,9 @@ object Lab4 {
               val p2 = for (i <- params) yield i._2
               val a2 = for (j <- args) yield typ(j)
               val pa = p2 zip a2
-              if (pa forall (x => x._1 == x._2)) { typ(e1) }
+              if (pa forall (x => x._1 == x._2)) { rt }
               else { err(typ(e1), e1)}
             }  
-          case TObj(fields) => TObj(fields)
-          case TBool => TBool
-          case TNumber => TNumber
-          case TString => TString
           case _ =>err(typ(e1), e1)//println(typ(e1)); TUndefined//
         
       }      

@@ -124,10 +124,40 @@ object Lab4 {
     sum(treeFromList(List(1,2,3))) == 6
   assert(testSum(sum))
   
+  /*def strictlyOrdered(t: Tree): Boolean = {
+    val (b, _) = t.foldLeft((true, None: Option[Int])){
+       t match{
+        case Empty => (acc, d) => (true, None)
+        case Node(l,d,r) =>  if(strictlyOrdered(l)){ val a2 = (strictlyOrdered(r),None); (a2, d) => a2 } else { val a3 = (false,None); (a3, d) => a3 } //Nope :(
+        case _ => (acc, d) => acc
+      }
+    }
+    b
+  }*/
   def strictlyOrdered(t: Tree): Boolean = {
     val (b, _) = t.foldLeft((true, None: Option[Int])){
-      
-      throw new UnsupportedOperationException
+       t match{
+        case Empty => (acc, d) => (true, None)
+        case Node(l,d,r) =>  {
+            var ret = (true, None:Option[Int]);
+            l match {
+                case Node(x, y, z) => { 
+                    r match {
+                        case Node(a, b, c) => if(y >= d || d >= b) ret = (false, None);
+                        case Empty => if(y >= d) ret = (false, None);
+                    }
+                }
+                case Empty => r match {
+                    case Node(a, b, c) => if (d >= b) ret = (false, None);
+                    case Empty => ret = (true, None);
+                }
+            }
+            
+            ret = (ret._1 && strictlyOrdered(l) && strictlyOrdered(r), None);
+            
+           (a, d) => a;
+        }
+      }
     }
     b
   }
@@ -165,7 +195,7 @@ object Lab4 {
       case Binary(Plus, e1, e2) => (typ(e1),typ(e2)) match{ 
         case (TNumber,TNumber)=>TNumber
         case (TString,TString)=>TString
-        case (t1,t2)=>err(t1,e1)
+        case (t1,t2)=> err(t1,e1)
       }
       case Binary(Minus, e1, e2) => (typ(e1), typ(e2)) match{
         case (TNumber, TNumber) => TNumber
@@ -199,15 +229,31 @@ object Lab4 {
         case (TString, TString) => TBool
         case (t1, t2) => err(t1, e1)
       }
-      case Binary(Eq, e1, e2) => (typ(e1), typ(e2)) match{
-        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
-        case (t1, TFunction(p1, p2)) => err(t1, e1)
-        case (t1, t2) => if (t1 == t2) TBool else err(t1, e1)
+      case Binary(Eq, e1, e2) => (e1, e2) match{
+        case (Function(p, params, tann, ex), e2) => err(typ(e1), e1)
+        case (e1, Function(p, params, tann, ex)) => err(typ(e2), e2)
+        case (e1, e2) => if(typ(e1) == typ(e2)) TBool else err(typ(e1), e1)
       }
-      case Binary(Ne, e1, e2) => (typ(e1), typ(e2)) match{
-        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
-        case (t1, TFunction(p1, p2)) => err(t1, e1)
-        case (t1, t2) => if (t1 == t2) TBool else err(t1,e1)
+        /*(typ(e1), typ(e2)) match {
+        case (t1, t2) => 
+          if (hasFunctionTyp(t1)) err(t1, e1)
+          else if (hasFunctionTyp(t2)) err(t2, e2)
+          else if (t1 == t2) TBool
+          else err(t1, e1)
+      }*/
+        
+        /*if (hasFunctionTyp(typ(e1))) err(typ(e1), e1) 
+      else if (hasFunctionTyp(typ(e2))) err(typ(e2), e2) 
+	      else {(typ(e1), typ(e2)) match{
+	        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
+	        case (t1, TFunction(p1, p2)) => errTFunction(p1, p2), e2)
+	        case (t1, t2) => if (t1 == t2) TBool else err(t1, e1)
+	      }
+      }*/
+      case Binary(Ne, e1, e2) => (e1, e2) match{
+        case (Function(p, params, tann, ex), e2) => err(typ(e1), e1)
+        case (e1, Function(p, params, tann, ex)) => err(typ(e2), e2)
+        case (e1, e2) => if(typ(e1) == typ(e2)) TBool else err(typ(e1), e1)
       }
       case Binary(And, e1, e2) => (typ(e1), typ(e2)) match{
         case (TBool, TBool) => TBool
@@ -224,8 +270,107 @@ object Lab4 {
         case (TBool, t2, t3) => if( t2 == t3) t2 else err(t2, e2)
         case (t1, t2, t3) => err(t1, e1)
       }
-      
-      case Function(p, params, tann, e1) => {
+      case Obj(m1) => { 
+    	  val m2 = for((x, ex) <- m1) yield x -> typ(ex);
+    	  TObj(m2)
+      }
+      /*case GetField(e1, f) => typ(e1) match{
+        case TObj(fields) => fields.getOrElse(f,err(TObj(fields),e1))
+        case t1 => err(t1,e1)
+        //case t1 => t1
+      }*/
+      case GetField(e1, f) =>  typ(e1) match{
+        case TObj(fields) => { val fields2 = fields.getOrElse(f, err(typ(e1), e1)); fields2}
+        case t1 =>  TUndefined// err(t1, e1)
+      }
+      /*case Call(e1, args) => typ(e1) match{
+        case TFunction(params, tann) => {
+            if (params.length != args.length) err (typ(e1), e1)
+             else {
+               val pl = params zip args
+               def typcheck(acc: Typ, pl: ((String, Typ), Expr)): Typ = 
+	              pl match{
+		              case ((pn, pt), a) => 
+		                if (pt != typ(a)) err(typ(e1), e1)
+		                else tann
+	            } 
+            	pl.foldLeft(typ(e1))(typcheck)      
+              }
+            }
+        
+        case t => t
+      }*/
+      case Call(e1, args) => typ(e1) match{
+          case TFunction(params, rt) => println("Hello from Call"); if (params.length != args.length) { err(typ(e1), e1)}
+            else{
+              val p2 = for (i <- params) yield i._2
+              val a2 = for (j <- args) yield typ(j)
+              val pa = p2 zip a2
+              if (pa forall (x => x._1 == x._2)) { TFunction(params,typ(e1)) }
+              else { err(typ(e1), e1)}
+            }
+            
+          case TObj(fields) => TObj(fields)
+          case _ =>err(typ(e1), e1)//println(typ(e1)); TUndefined//
+        
+      }
+        
+        /*e1 match{
+            case Function(p, params, tann, e1) => println("HELLO FROM Call Function")  
+            if (params.length != args.length) {println("HELLO FROM not same length"); err(typ(e1), e1)}
+            else{
+              val p2 = for (i <- params) yield i._2
+              val a2 = for (j <- args) yield typ(j)
+              val pa = p2 zip a2
+              if (pa forall (x => x._1 == x._2)) {println("HELLO FROM same typs"); typ(e1) }
+              else {println("HELLO FROM not same typs"); err(typ(e1), e1)}
+            	  
+            }
+              /*tann match{
+              case _ => 
+            
+            {
+              val params2 = for(i <- params) yield i._2
+            if (params2.length != args.length) err(typ(e1), e1)
+            
+             else{ val pl = params zip args
+              def typcheck(acc: Typ, pl: ((String, Typ), Expr)): Typ = 
+	              pl match{
+		              case ((pn, pt), a) => 
+		                if (pt == typ(a)) {
+		                  tann match{
+		                    case None => TUndefined
+		                    case Some(t) => t
+		                }
+		                  }
+		                else err(typ(e1), e1)
+	            } 
+            	pl match{
+            	  case Nil => tann match{
+		                    case None => TUndefined
+		                    case Some(t) => t
+		                }
+            	  case _ => pl.foldLeft(typ(e1))(typcheck)
+            	}      
+
+             }
+            
+            }
+            }*/
+            
+            case Var(x) =>  println("HELLO FROM Call Var"); typeInfer(env, e1)// I don't know what to do in this case
+            case _ => println("HELLO FROM Call other"); err(typ(e1), e1)
+        }*/
+      /*case Call(e1, args) => e1 match{
+        case Function(p, params, tann, e1) if(params.length == args.length)=> tann match{
+          case None => TUndefined
+          case Some(t) => t
+        }
+        case _ => err(typ(e1), e1)
+      }*/
+    
+      case Function(p, params, tann, e1) =>      
+        { 
         // Bind to env1 an environment that extends env with an appropriate binding if
         // the function is potentially recursive.
         val env1 = (p, tann) match {
@@ -236,21 +381,36 @@ object Lab4 {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with bindings for params.
-        val env2 = (p, tann) match {
-          case (Some(f), Some(rt)) =>
-            val tprime = TFunction(params, rt)
-            env1 + (f -> tprime)
-          case _ => err(TUndefined, e1)
+        val env2 = params match{
+          case Nil => env1
+          case h::t => {
+            def enviro2 (acc: Map[String, Typ], params: (String, Typ)): Map[String, Typ] =
+              params match{
+              case (s, t) => env1 + (s -> t)
+            }
+            params.foldLeft(env)(enviro2)
+          }
+          case _ =>  err(TUndefined, e1)
         }
         //val env2 = err(TUndefined, e1)
+       
         // Match on whether the return type is specified.
         tann match {
-          case None => TUndefined
-          case Some(rt) => rt
+          case None =>  typeInfer(env2,e1)//TFunction(params, typeInfer(env2, e1)) //err(typ(e1), e1)
+          case Some(rt) =>  rt//TFunction(params, rt)//if (rt == typ(e1)) TFunction(params, rt) else err(typ(e1), e1)
+          /*case Some(rt) => {
+            if (rt == typ(e1)) TFunction(params, rt)
+            else err(typ(e1), e1)
+          }*/
+          //case Some(rt) => typeInfer(env2, e1)
         }
+        
+        
       }
+      
       case _ => throw new UnsupportedOperationException
     }
+    
   }
   
   def inferType(e: Expr): Typ = typeInfer(Map.empty, e)
@@ -292,7 +452,16 @@ object Lab4 {
       case Var(y) => if (x == y) v else e
       case ConstDecl(y, e1, e2) =>
         ConstDecl(y, subst(e1), if (x == y) e2 else subst(e2))
-      case _ => throw new UnsupportedOperationException
+      case Function(Some(x1), params, tann, e1) if (x1 == x) => e
+      case Function(p, params, tann, e1) => if(params forall (s => s._1 != x)) Function(p, params, tann, subst(e1)) else e
+      //case Function(p, params, tann, e1) if (x == params(0)._1 ) => e1 // checks if x == first name in params
+      //case Function(p, params, tann, e1) => Function(p, params, tann, subst(e1))
+      case Obj(fields) =>
+        val f2 = for (i <- fields) yield i._1 -> subst(i._2);
+        Obj(f2)
+      
+      case GetField(e1, f) => GetField(subst(e1), f)
+      //case _ => throw new UnsupportedOperationException
     }
   }
   
@@ -319,61 +488,98 @@ object Lab4 {
       case Binary(Or, B(b1), e2) => if (b1) B(true) else e2
       case ConstDecl(x, v1, e2) if isValue(v1) => substitute(e2, v1, x)
       case If(B(e1), e2, e3) => if (e1) e2 else e3
-      case Call(e1, args) if isValue(e1) => e1 match{
-        case Function(None, params, tann, ex) => params match{
-          case x::Nil => x match{ //make work for all elements in list
-            case (s, typ) => substitute(ex, e1, s);
-            case _ => throw new UnsupportedOperationException
+      case Call(e1, args) if isValue(e1) && (args forall isValue) => e1 match{
+        case Function(None, params, tann, ex) => {
+          val pa = params zip args;
+          def sub(acc: Expr, pa:((String, Typ), Expr)): Expr = 
+            pa match{
+            case ((s, t), a) => substitute(acc, a, s)
           }
-          case _ => throw new UnsupportedOperationException
+          val ex2 = pa.foldLeft(ex)(sub)
+          ex2
         }
-        case Function(Some(f), params, tann, ex) => params match{
-          case x::Nil => x match{ //make work for all elements in list
-            case (s, typ) => substitute(substitute(ex, e1, f), e1, s);
-            case _ => throw new UnsupportedOperationException
+        
+        case Function(Some(f), params, tann, ex) => {
+          val pa = params zip args;
+          def sub(acc: Expr, pa:((String, Typ), Expr)): Expr = 
+            pa match{
+            case ((s, t), a) => substitute(substitute(acc,e1,f), a, s)
           }
-          case _ => throw new UnsupportedOperationException
+          val ex2 = pa.foldLeft(ex)(sub)
+          ex2
         }
+        
         case _ => throw new DynamicTypeError(e)
       }
-      case Obj(fields) => fields.values match{ //need??
-        case x::t => val f = " "; substitute(e,x,f)//??
-      }
-      //breaks a test
-      //case GetField(e1, f) if isValue(e1) => substitute(e, e1, f) //???
+      case GetField(e1, f) if isValue(e1) => e1 match{
+        case Obj(fields) => fields.getOrElse(f, throw new StuckError(e))
+        case _ => throw new StuckError(e)
+      } 
+      
       /*** Fill-in more cases here. ***/
         
       /* Inductive Cases: Search Rules */
       case Print(e1) => Print(step(e1))
       case Unary(uop, e1) => Unary(uop, step(e1))
-      case Binary(bop, v1, e2) if isValue(v1) => Binary(bop, v1, step(e2))
-      case Binary(bop, e1, e2) => Binary(bop, step(e1), e2)
-      case If(e1, e2, e3) => If(step(e1), e2, e3)
+      case Binary(bop, e1, e2) if !isValue(e1) => Binary(bop, step(e1), e2)
+      case Binary(bop, v1, e2) if !isValue(e2) => Binary(bop, v1, step(e2))
+      case If(e1, e2, e3) if !isValue(e1) => If(step(e1), e2, e3)
       case ConstDecl(x, e1, e2) => ConstDecl(x, step(e1), e2)
-      case Call(e1,e2) if !isValue(e1)=> Call(step(e1), e2)
-      case Call(e1, args) if isValue(e1) => e1 match{ //????
-        case Function(None, params, tann, ex) => params match{
-          case x::Nil => x match{ //make work for all elements in list
-            case (s, typ) => substitute(step(ex), e1, s);
-            case _ => throw new UnsupportedOperationException
+      case Call(e1, args) if !isValue(e1) => Call(step(e1), args)
+      /*case Call(e1, args) if !(args forall isValue) => {
+        def stp(acc: Expr, args: Expr): Expr ={
+          args match{
+            case ex if (!isValue(ex)) => step(ex)
+            case ex => ex
           }
-          case _ => throw new UnsupportedOperationException
-        }
-        case Function(Some(f), params, tann, ex) => params match{
-          case x::Nil => x match{ //make work for all elements in list
-            case (s, typ) => substitute(substitute(step(ex), e1, f), e1, s);
-            case _ => throw new UnsupportedOperationException
-          }
-          case _ => throw new UnsupportedOperationException
-        }
-        case _ => throw new DynamicTypeError(e)
+        
       }
-      //breaks test case
-      //case GetField(e1, f) => GetField(step(e1), f)
+        args.foldLeft(e1)(stp)
+      }*/
+      case Call(e1, args) if !(args forall isValue) => {
+        /*val args2 = mapFirst((ex: Expr) => if (!isValue(ex)) Some(step(ex)) else None)(args)
+        Call(e1, args2)*/
+        val args2 = for (i <- args) yield step(i)
+        Call(e1, args2)
+      }
+      case GetField(e1, f) => GetField(step(e1), f)
+      case Obj(fields) =>
+        val x = for (i <- fields) yield i._1 -> step(i._2);
+        Obj(x)
+      /*case Obj(fields) => {
+        val f2 = for ((s, ex) <- fields) yield ex
+        val f3 = f2.find((ex: Expr) => !isValue(ex))
+        f3 match{
+          case None => Obj(fields)
+          case Some(se) => step(se)
+        }
+        val fields2 = for (i <- fields) yield i._1 -> i._2
+        Obj(fields2)
+      }*/
+      /*case Obj(fields) => {
+        //val fe: List[Expr] = for (i <- List.range(0, fields.length)) yield i._2
+        // fields2 = mapFirst((m: Map[String, Expr]) => 
+          //if (!isValue(m)) Some(m) else None)(fe)
+        //val f2 = for (i <- fields) yield i._1 -> step(i._2)
+        val fs = for (i <- fields) yield i._1
+        val fs2 = fs.toList
+        val fe = for (i <- fields) yield i._2
+        val fe2 = fe.toList
+        val f2 = mapFirst((m: Expr ) => if (!isValue(m)) Some(step(m)) else None)(fe2)
+        //val f3 = for (i <- fs2; j <- fe2) yield Map(i -> j)
+        //val f3 = fs2 zip fe2
+        //val f4 = for(j <- List.range(0, f3.length)) yield Map(f3(j)._1 -> f3(j)._2)
+        //Obj(f3)
+        val obj2 = Obj(Map(fs2(0) -> f2(0), fs2(1) -> fe2(1)))
+        obj2
+      }*/
+      
       /*** Fill-in more cases here. ***/
       
+      //case Var(x) => throw new DynamicTypeError(e) //Just so we know if this is trying to go through step
       /* Everything else is a stuck error. */
       case _ => throw new StuckError(e)
+      
     }
   }
 

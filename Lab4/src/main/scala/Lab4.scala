@@ -229,35 +229,20 @@ object Lab4 {
         case (TString, TString) => TBool
         case (t1, t2) => err(t1, e1)
       }
-      case Binary(Eq, e1, e2) => (typ(e1), typ(e2)) match {
-        case (t1, t2) => 
-          if (hasFunctionTyp(t1)) err(t1, e1)
-          else if (hasFunctionTyp(t2)) err(t2, e2)
-          else if (t1 == t2) TBool
-          else err(t1, e1)
-      }
-        /*(e1, e2) match{
+      case Binary(Eq, e1, e2) => 
+        (e1, e2) match{
         case (Function(p, params, tann, ex), e2) => err(typ(e1), e1)
         case (e1, Function(p, params, tann, ex)) => err(typ(e2), e2)
         case (e1, e2) => if(typ(e1) == typ(e2)) TBool else err(typ(e1), e1)
-      }*/
-        
-        
-        /*if (hasFunctionTyp(typ(e1))) err(typ(e1), e1) 
-      else if (hasFunctionTyp(typ(e2))) err(typ(e2), e2) 
-	      else {(typ(e1), typ(e2)) match{
-	        case (TFunction(p1, p2), t2) => err(TFunction(p1, p2), e1)
-	        case (t1, TFunction(p1, p2)) => errTFunction(p1, p2), e2)
-	        case (t1, t2) => if (t1 == t2) TBool else err(t1, e1)
-	      }
-      }*/
-      case Binary(Ne, e1, e2) => (typ(e1), typ(e2)) match {
-        case (t1, t2) => 
-          if (hasFunctionTyp(t1)) err(t1, e1)
-          else if (hasFunctionTyp(t2)) err(t2, e2)
-          else if (t1 == t2) TBool
-          else err(t1, e1)
       }
+        
+      case Binary(Ne, e1, e2) => 
+        (e1, e2) match{
+        case (Function(p, params, tann, ex), e2) => err(typ(e1), e1)
+        case (e1, Function(p, params, tann, ex)) => err(typ(e2), e2)
+        case (e1, e2) => if(typ(e1) == typ(e2)) TBool else err(typ(e1), e1)
+      }
+        
       case Binary(And, e1, e2) => (typ(e1), typ(e2)) match{
         case (TBool, TBool) => TBool
         case (t1, t2) => err(t1, e1)
@@ -277,40 +262,19 @@ object Lab4 {
     	  val m2 = for((x, ex) <- m1) yield x -> typ(ex);
     	  TObj(m2)
       }
-      /*case GetField(e1, f) => typ(e1) match{
-        case TObj(fields) => fields.getOrElse(f,err(TObj(fields),e1))
-        case t1 => err(t1,e1)
-        //case t1 => t1
-      }*/
+      
       case GetField(e1, f) =>  typ(e1) match{
         case TObj(fields) => { val fields2 = fields.getOrElse(f, err(typ(e1), e1)); fields2}
         case t1 =>  TUndefined// err(t1, e1)
       }
-      /*case Call(e1, args) => typ(e1) match{
-        case TFunction(params, tann) => {
-            if (params.length != args.length) err (typ(e1), e1)
-             else {
-               val pl = params zip args
-               def typcheck(acc: Typ, pl: ((String, Typ), Expr)): Typ = 
-	              pl match{
-		              case ((pn, pt), a) => 
-		                if (pt != typ(a)) err(typ(e1), e1)
-		                else tann
-	            } 
-            	pl.foldLeft(typ(e1))(typcheck)      
-              }
-            }
-        
-        case t => t
-      }*/
+      
       case Call(e1, args) => 
         typ(e1) match{ 
           case TFunction(params, rt) => if (params.length != args.length) { err(typ(e1), e1)}
             else{
-              val p2 = for (i <- params) yield i._2
-              val a2 = for (j <- args) yield typ(j)
-              val pa = p2 zip a2
-              if (pa forall (x => x._1 == x._2)) { rt }
+              val p2 = params.unzip._2
+              val a2 = args map typ
+              if (a2 == p2) { rt }
               else { err(typ(e1), e1)}
             }  
           case _ =>err(typ(e1), e1)//println(typ(e1)); TUndefined//
@@ -334,9 +298,9 @@ object Lab4 {
           case h::t => {
             def enviro2 (acc: Map[String, Typ], params: (String, Typ)): Map[String, Typ] =
               params match{
-              case (s, t) => env1 + (s -> t)
+              case (s, t) => acc + (s -> t)
             }
-             params.foldLeft(env)(enviro2)
+             params.foldLeft(env1)(enviro2)
           }
           case _ =>  err(TUndefined, e1)
         }
@@ -469,10 +433,10 @@ object Lab4 {
         Call(e1, args2)
       }
       case GetField(e1, f) => GetField(step(e1), f)
-      case Obj(fields) =>
-        val x = for (i <- fields) yield i._1 -> step(i._2);
-        Obj(x)
-      
+       case Obj(fields) if !(fields.values forall isValue) => {
+        var fields2 = (fields.keys toList) zip (mapFirst((x: Expr) => if(!isValue(x)) Some(step(x)) else None)(fields.values toList)) toMap;
+        Obj(fields2)
+      }
       
       /*** Fill-in more cases here. ***/
       

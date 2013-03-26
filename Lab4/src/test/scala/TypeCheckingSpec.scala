@@ -139,7 +139,7 @@ class TypeCheckingSpec extends FlatSpec {
   {
     assert(inferType(Function(None, List(), Some(TNumber), N(1))) == TFunction(List(), TNumber))
     intercept[StaticTypeError] { 
-      inferType(Function(None, List(), Some(TBool), N(1)))
+      inferType(Function(None, List(), Some(TBool), N(1))) //if rt == typ(e1)
     }
   }
 

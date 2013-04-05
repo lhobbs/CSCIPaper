@@ -1,8 +1,8 @@
 import java.io.File
-object Lab4Main {
+object Lab5Main {
   import jsy.util._
-  import jsy.lab4._
-  import Lab4.{inferType, step} // change this to reference your lab object
+  import jsy.lab5._
+  import Lab5.{removeInterfaceDecl,inferType, step} // change this to reference your lab object
   
   var debug = false /* set to false to disable debugging output */
   var debugSteps = true /* set to false to disable individual evaluation steps printing */
@@ -45,32 +45,53 @@ object Lab4Main {
     }
     
     handle(None: Option[Unit]) {Some{
-      if (!ast.closed(expr))
-        throw new IllegalArgumentException("Top-level expression must be closed for evaluation. Expression %s is not closed.".format(expr))
+      ast.checkClosed(expr)
     }} match {
       case None => return
       case r => r
     }
     
-    if (debug) { println("Type checking ...") }
+    if (debug) { println("Removing interface declarations ...") }
     
-    handle() {
-      val t = inferType(expr)
-      println(ast.pretty(t))
+    val Some(expr1) =
+      handle(None: Option[ast.Expr]) {Some{
+        removeInterfaceDecl(expr)
+      }} match {
+        case None => return
+        case r => r
+      }
+      
+    if (debug) {
+      println("  %s".format(expr1))
+      println("------------------------------------------------------------")
+      println("Type checking ...")
     }
     
+    val Some(ty) =
+      handle(None: Option[ast.Typ]) {Some{
+        inferType(expr1)
+      }} match {
+        case None => return
+        case r => r
+      }
+    
     if (debug) {
+      println(ast.pretty(ty))
       println("------------------------------------------------------------")
       println("Evaluating with Small-Step Interpreter ...")
     }
     
-    def evaluateWithStep(e: ast.Expr, n: Int): ast.Expr = {
-      if (debug && debugSteps) { println("Step %s: %s".format(n, e)) }
-      if (ast.isValue(e)) e else evaluateWithStep(step(e), n + 1)
+    def evaluateWithStep(m: Map[ast.A, ast.Expr], e: ast.Expr, n: Int): (Map[ast.A, ast.Expr], ast.Expr) = {
+      if (debug && debugSteps) { println("Step %s:%n  %s%n  %s".format(n, m, e)) }
+      if (ast.isValue(e)) (m, e)
+      else {
+        val (mp, ep) = step(m, e)
+        evaluateWithStep(mp, ep, n + 1)
+      }
     }
     
     handle() {
-      val v1 = evaluateWithStep(expr, 0)
+      val (_, v1) = evaluateWithStep(Map.empty, expr1, 0)
       println(ast.pretty(v1))
     }
   }

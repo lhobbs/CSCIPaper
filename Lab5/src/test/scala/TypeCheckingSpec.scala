@@ -1,6 +1,6 @@
 import org.scalatest._
-import jsy.lab4.ast._
-import Lab4._
+import jsy.lab5.ast._
+import Lab5._
 
 class TypeCheckingSpec extends FlatSpec {
 
@@ -90,7 +90,7 @@ class TypeCheckingSpec extends FlatSpec {
       inferType(Binary(Plus, Undefined, N(1)))
     }
     intercept[StaticTypeError] {
-      inferType(Binary(Plus, S("a"), Function(None, List(("x", TBool)), None, Undefined)))
+      inferType(Binary(Plus, S("a"), Function(None, List(("x", (PConst, TBool))), None, Undefined)))
     } 
   }
 
@@ -119,19 +119,19 @@ class TypeCheckingSpec extends FlatSpec {
 
   "Type Checking" should "make sure that call matches function parameters and arguements" in
   {
-    assert(inferType(Call(Function(None, List(("x", TNumber), ("y", TBool)), None, Undefined), List(N(1), B(true)))) == TUndefined)
+    assert(inferType(Call(Function(None, List(("x", (PConst, TNumber)), ("y", (PConst, TBool))), None, Undefined), List(N(1), B(true)))) == TUndefined)
     intercept[StaticTypeError] {
-      inferType(Call(Function(None, List(("x", TNumber), ("y", TBool)), None, Undefined), List(N(1), N(2))))
+      inferType(Call(Function(None, List(("x", (PConst, TNumber)), ("y", (PConst, TBool))), None, Undefined), List(N(1), N(2))))
     }
   }
 
   "Type checking" should "ensure that callis provide the same number of arguments as parameters in the function" in
   {
     intercept[StaticTypeError] {
-      inferType(Call(Function(None, List(("x", TBool), ("y", TBool)), None, Undefined), List(B(true), B(false), B(true))))
+      inferType(Call(Function(None, List(("x", (PConst, TBool)), ("y", (PConst, TBool))), None, Undefined), List(B(true), B(false), B(true))))
     }
     intercept[StaticTypeError] {
-      inferType(Call(Function(None, List(("x", TBool), ("y", TBool)), None, Undefined), List(B(true))))
+      inferType(Call(Function(None, List(("x", (PConst, TBool)), ("y", (PConst, TBool))), None, Undefined), List(B(true))))
     }
   }
 

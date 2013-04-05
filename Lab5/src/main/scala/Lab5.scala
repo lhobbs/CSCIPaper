@@ -3,10 +3,10 @@ object Lab5 {
   
   /*
    * CSCI 3155: Lab 5
-   * <Your Name>
+   * <Lisa Hobbs>
    * 
    * Partner: <Your Partner's Name>
-   * Collaborators: <Any Collaborators>
+   * Collaborators: <Daniel Morrissey>
    */
 
   /*

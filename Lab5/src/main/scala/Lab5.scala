@@ -49,7 +49,13 @@ object Lab5 {
       def rm(e: Expr): Expr = loop(env, e)
       val r =
         e match {
-          case Unary(Cast(t), e1) => throw new UnsupportedOperationException
+          case Unary(Cast(t), e1) => t match{
+            case TObj(fields) => e1 match{
+              case Null => null
+              case _ => Unary(Cast(t), rm(e1))
+            }
+            case _ => Unary(Cast(t), rm(e1))
+            }//??
           case Function(p, params, retty, e1) => throw new UnsupportedOperationException
           case InterfaceDecl(tvar, t, e1) => throw new UnsupportedOperationException
           /* Pass through cases. */
@@ -78,7 +84,7 @@ object Lab5 {
   def castOk(t1: Typ, t2: Typ): Boolean = (t1, t2) match {
     case (TNull, TObj(_)) => true
     case (_, _) if (t1 == t2) => true
-    case (TObj(fields1), TObj(fields2)) => throw new UnsupportedOperationException
+    case (TObj(fields1), TObj(fields2)) => if (fields1.head == fields2.head) true else false  
     case (_, TInterface(tvar, t2p)) => castOk(t1, typSubstitute(t2p, t2, tvar))
     case (TInterface(tvar, t1p), _) => castOk(typSubstitute(t1p, t1, tvar), t2)
     case _ => false
@@ -184,7 +190,21 @@ object Lab5 {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with the parameters.
-        val env2 = throw new UnsupportedOperationException
+        val env2 = params match{
+          case Nil => env1
+          case h::t => {
+            def enviro2 (acc: Map[String, (PMode, Typ)], params: (String, (PMode,Typ))): Map[String, (PMode, Typ)] =
+              params match{
+              case (s, (p, t)) => acc + (s -> (p, t))
+            }
+            val envi2 = params.head match{
+              case (s, (p, t)) =>  Map(s -> (Const, t))
+            }
+             //params.foldLeft(env1)(envi2)
+            envi2
+          }
+          case _ =>  err(TUndefined, e1)
+        }
         // Infer the type of the function body
         val t1 = typeInfer(env2, e1)
         tann foreach { rt => if (rt != t1) err(t1, e1) };
@@ -192,6 +212,29 @@ object Lab5 {
       }
       
       /*** Fill-in more cases here. ***/
+
+      case Null => TNull
+      case Decl(mut, x, e1, e2) => {
+        val env1 = env + (x -> (mut, typ(e1)))
+        val t = typeInfer(env1, e2)
+        t
+      }
+      //AssignVar ?
+      case Assign(e1, e2) => typ(e1)
+      
+      case Call(e1, args) => 
+        typ(e1) match{ 
+          case TFunction(params, rt) => if (params.length != args.length) { err(typ(e1), e1)}
+            else{
+              val p2 = params.unzip._2
+              val a2 = args map typ
+              if (a2 == p2) { rt }
+              else { err(typ(e1), e1)}
+            }  
+          case _ => err(typ(e1), e1)
+        
+      }    
+      
         
       /* Should not match: non-source expressions or should have been removed */
       case A(_) | Unary(Deref, _) | InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
@@ -234,8 +277,8 @@ object Lab5 {
     def rename(env: Map[String,String], e: Expr): Expr = {
       def ren(e: Expr): Expr = rename(env, e)
       e match {
-        case Var(y) => throw new UnsupportedOperationException
-        case Decl(mut, y, e1, e2) => throw new UnsupportedOperationException
+        case Var(y) => e //??
+        case Decl(mut, y, e1, e2) => Decl(mut, y, ren(e1), ren(e2)) //??
         case Function(p, params, retty, e1) =>
           val (env1, prenamed) = p match {
             case None => (env, None)
@@ -343,8 +386,7 @@ object Lab5 {
       case If(B(b1), e2, e3) => (m, if (b1) e2 else e3)
       case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) =>
         val a = A.fresh()
-        (m + (a -> e), a)
-      
+        (m + (a -> e), a)     
       case Call(v1, args) if isValue(v1) =>
         v1 match {
           case Function(p, params, _, e1) =>
@@ -372,14 +414,59 @@ object Lab5 {
         }
         
       /*** Fill-in more cases here. ***/
+        //DoConst
+      case Decl(Const, x, v1, e2) if isValue(v1)=> {
+        val ep = substitute(e2, v1, x)
+        (m, ep)
+      }
+      //DoVar
+      case Decl(Var, x, v1, e2) if isValue(v1) => {
+        val a = A.fresh()
+        val m2 = m + (a -> v1)
+        val defref = Unary(Deref, a)
+        val ep2 = substitute(e2, defref, x)
+        (m2, ep2)
+      }
+      //DoGetField
+      case GetField(e1, f) if isValue(e1) => e1 match{
+        case Null => throw new NullDereferenceError(e1) //???
+        case _ => 
+          val a = A.fresh()
+      	val ma = m(a)
+      	ma match{
+          case Obj(fields) => 
+            val f2 = fields.getOrElse(f, throw new StuckError(e))
+            (m, f2)
+          case _ => throw new StuckError(e)
+        }
+      }
+      
+      //DoAssignVar ??
+      case Assign(v1, e2) if isValue(v1) =>
+        val a = A.fresh()
+        val m2 = m + (a -> v1)
+        (m2, v1)
+      //DoDeref??? 
+      case Unary(Deref, e1) =>
+        val a = A.fresh() 
+        (m, m(a)) 
+
         
       /* Inductive Cases: Search Rules */
       case Print(e1) =>
         val (mp,e1p) = step(m,e1)
         (mp, Print(e1p))
-      case Unary(uop, e1) =>
-        val (mp,e1p) = step(m,e1)
+      case Unary(uop, e1) => uop match{ //I don't know if this is where we should check for Cast Null
+        case Cast(t) => e1 match{
+          case Null => (m, Null)
+          case _ => val (mp,e1p) = step(m,e1)
+          	(mp, Unary(uop, e1p))
+        }
+        case _ =>
+          val (mp,e1p) = step(m,e1)
         (mp, Unary(uop, e1p))
+      }
+        
       case Binary(bop, v1, e2) if isValue(v1) =>
         val (mp,e2p) = step(m,e2)
         (mp, Binary(bop, v1, e2p))
@@ -397,9 +484,34 @@ object Lab5 {
       }
         
       /*** Fill-in more cases here. ***/
+      case Decl(mut, x, e1, e2) => 
+        val (mp, ep) = step(m, e1)
+        (mp, Decl(mut, x, ep, e2))
+        
+      case GetField(e1, f) =>
+        val (mp, ep) = step(m, e1)
+        (mp, GetField(ep, f))
+        
+      case Assign(v1, e2) if isValue(v1) =>
+        val (mp, ep) = step(m, e2)
+        (mp, Assign(v1, ep))
+        
+      case Assign(e1, e2) =>
+        val (mp, ep) = step(m, e1)
+        (mp, Assign(ep, e2))
+        
+      case Call(e1, args) if !isValue(e1) =>
+        val (mp, ep) = step(m, e1)
+        (mp, Call(ep, args))
+      case Call(e1, args) if !(args forall isValue) => {
+        val (mp, args2) = (m, mapFirstWith(args, (A: Expr, B:List[Expr]) => if (!isValue(e1))  Some(step(m, e1)) else None))(args)
+        (mp, Call(e1, args2))
+      }
+        
+      
       
       /* Everything else is a stuck error. */
-      case _ => throw new StuckError(e)
+      //case _ => throw new StuckError(e)
     }
   }
 

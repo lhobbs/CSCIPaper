@@ -503,15 +503,21 @@ object Lab5 {
       case Call(e1, args) if !isValue(e1) =>
         val (mp, ep) = step(m, e1)
         (mp, Call(ep, args))
-      case Call(e1, args) if !(args forall isValue) => {
-        val (mp, args2) = (m, mapFirstWith(args, (A: Expr, B:List[Expr]) => if (!isValue(e1))  Some(step(m, e1)) else None))(args)
+        
+      /*
+       * don't need this
+       * case Call(e1, args) if !(args forall isValue) => {
+        def f(mem: Mem, ex: Expr) : Option[(Mem, Expr)] = if (!isValue(ex))  Some(step(mem, ex)) else None
+        val (mp, args2) = (mapFirstWith(m, (f _).tupled)(args))
         (mp, Call(e1, args2))
       }
+       */
+      
         
       
       
       /* Everything else is a stuck error. */
-      //case _ => throw new StuckError(e)
+      case _ => throw new StuckError(e)
     }
   }
 

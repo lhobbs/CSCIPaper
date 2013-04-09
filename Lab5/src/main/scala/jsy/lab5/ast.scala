@@ -74,6 +74,9 @@ object ast {
       nextA += 1;
       r
     }
+    def reset() = {
+      nextA = 1;
+    }
   }
   
   case object Deref extends Uop /* *e1 */

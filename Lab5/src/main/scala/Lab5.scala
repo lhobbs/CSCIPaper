@@ -384,6 +384,12 @@ object Lab5 {
       case Binary(Times, N(n1), N(n2)) => (m, N(n1 * n2))
       case Binary(Div, N(n1), N(n2)) => (m, N(n1 / n2))
       case If(B(b1), e2, e3) => (m, if (b1) e2 else e3)
+      case Obj(fields) if !(fields.values forall isValue) => {
+         def f(mem: Mem, ex: Expr) : Option[(Mem, Expr)] = if (!isValue(ex)) Some(step(mem, ex)) else None
+         val (q1, q2) = mapFirstWith(m, (f _).tupled)(fields.values toList)
+        val fields2 = (fields.keys toList) zip q2 toMap;
+        (q1, Obj( fields2))
+      }
       case Obj(fields) if (fields forall { case (_, vi) => isValue(vi)}) =>
         val a = A.fresh()
         (m + (a -> e), a)     
@@ -405,8 +411,9 @@ object Lab5 {
             else {
               /* SearchCall2 case */
               val (mp, zippedpap) =
-                mapFirstWith[((String,(PMode, Typ)),Expr), Mem](m, { case (accm, (pi @ (_, (modei, _)), argi)) =>
-                  throw new UnsupportedOperationException
+                mapFirstWith[((String,(PMode, Typ)),Expr), Mem](m, { case (accm, (pi @ (s, (modei, t)), argi)) => 
+                  if (!isValue(argi))  Some(m, ((s, (modei, t)), step(m, argi)._2))
+                  else None
                 })(zippedpa)
               (mp, Call(v1, zippedpap.unzip._2))
             }
@@ -430,19 +437,23 @@ object Lab5 {
       //DoGetField
       case GetField(e1, f) if isValue(e1) => e1 match{
         case Null => throw new NullDereferenceError(e1) //???
-        case _ => 
-          val a = A.fresh()
-      	val ma = m(a)
-      	ma match{
-          case Obj(fields) => 
-            val f2 = fields.getOrElse(f, throw new StuckError(e))
-            (m, f2)
-          case _ => throw new StuckError(e)
-        }
+        case Obj(fields) => val f2 = fields.getOrElse(f, throw new StuckError(e))
+	            (m, f2)
+        case _ => throw new StuckError(e)
+          	/*//e1.A()
+	        val a = A.fresh()
+	      	val ma = m(a)
+	      	ma match{
+	          case Obj(fields) => 
+	            val f2 = fields.getOrElse(f, throw new StuckError(e))
+	            (m, f2)
+	          case _ => throw new StuckError(e)
+	        }*/
       }
       
       //DoAssignVar ??
-      case Assign(v1, e2) if isValue(v1) =>
+     /* Doesn't work :/
+      *  case Assign(v1, e2) if isValue(v1) =>
         val a = A.fresh()
         val m2 = m + (a -> v1)
         (m2, v1)
@@ -450,7 +461,7 @@ object Lab5 {
       case Unary(Deref, e1) =>
         val a = A.fresh() 
         (m, m(a)) 
-
+*/
         
       /* Inductive Cases: Search Rules */
       case Print(e1) =>
@@ -504,15 +515,17 @@ object Lab5 {
         val (mp, ep) = step(m, e1)
         (mp, Call(ep, args))
         
-      /*
-       * don't need this
-       * case Call(e1, args) if !(args forall isValue) => {
+        
+       
+      
+        //don't need this
+       /*case Call(e1, args) if !(args forall isValue) => {
         def f(mem: Mem, ex: Expr) : Option[(Mem, Expr)] = if (!isValue(ex))  Some(step(mem, ex)) else None
         val (mp, args2) = (mapFirstWith(m, (f _).tupled)(args))
         (mp, Call(e1, args2))
       }
-       */
-      
+       
+      */
         
       
       

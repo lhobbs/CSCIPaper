@@ -13,7 +13,7 @@ class DeclSpec extends FlatSpec {
   } 
 
   "Decl(Var, x, e1, e2)" should "let x be a mutabale variable" in {
-    A.fresh()
+    A.reset()
     val e1 = N(3)
     val e2 = Binary(Seq, Assign(Var("x"), N(4.0)), Var("x"))
     val e3 = iterateStep(Map.empty, Decl(Var, "x", e1, e2))

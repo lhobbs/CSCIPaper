@@ -56,8 +56,8 @@ object Lab5 {
             }
             case _ => Unary(Cast(t), rm(e1))
             }//??
-          case Function(p, params, retty, e1) => throw new UnsupportedOperationException
-          case InterfaceDecl(tvar, t, e1) => throw new UnsupportedOperationException
+          case Function(p, params, retty, e1) => Function(p, params, retty, rm(e1)) //???
+          case InterfaceDecl(tvar, t, e1) => InterfaceDecl(tvar, t, rm(e1)) //Broke stuff
           /* Pass through cases. */
           case Var(_) | N(_) | B(_) | Undefined | S(_) | Null | A(_) => e
           case Print(e1) => Print(rm(e1))
@@ -190,7 +190,7 @@ object Lab5 {
           case _ => err(TUndefined, e1)
         }
         // Bind to env2 an environment that extends env1 with the parameters.
-        val env2 = params match{
+        val env2 = params match{ //???
           case Nil => env1
           case h::t => {
             def enviro2 (acc: Map[String, (PMode, Typ)], params: (String, (PMode,Typ))): Map[String, (PMode, Typ)] =

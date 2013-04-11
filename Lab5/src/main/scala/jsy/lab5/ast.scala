@@ -65,7 +65,7 @@ object ast {
   case class Assign(e1: Expr, e2: Expr) extends Expr
   case object Null extends Expr
   
-  case class A(a: Int) extends Expr
+   case class A(a: Int) extends Expr
   object A {
     /* Allocate addresses. */
     private var nextA: Int = 1
@@ -74,8 +74,8 @@ object ast {
       nextA += 1;
       r
     }
-    def reset() {
-      nextA = 1
+    def reset() = {
+      nextA = 1;
     }
   }
   

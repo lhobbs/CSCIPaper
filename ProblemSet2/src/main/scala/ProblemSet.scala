@@ -8,7 +8,11 @@ object ProblemSet2 {
 */
 
     def join[A,B](xs: List[A], ys: List[B], p: (A, B) => Boolean):List[(A,B)] = 
+<<<<<<< HEAD
     	xs.flatMap(x => ys.withFilter(y => p(x, y)).map(y => (x,y)))
+=======
+        xs.flatMap(x => ys.withFilter(y => p(x, y)).map(y => (x,y)))
+>>>>>>> b9d474abf0d4c08d7b4d0bdebd81c0f298bba4be
 
 
     type Env = Map[String, Boolean]

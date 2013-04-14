@@ -313,6 +313,7 @@ object Lab5 {
         
         /* Should not match: should have been removed. */
         case InterfaceDecl(_, _, _) => throw new IllegalArgumentException("Gremlins: Encountered unexpected expression %s.".format(e))
+        case Print(x) => throw new UnsupportedOperationException
       }
     }
     

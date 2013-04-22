@@ -1,22 +1,46 @@
-	In the spring of 2002 there was a proposal to add a type bool to Python.  This proposal adds constants True and
-	False that behave as 1 and 0 in most situations.  There were some controversies over implementing this type, but
-	in the end it was approved and added to the Python language.  Guido van Rossum explains that most languages 
-	eventually implement a Boolean type because many programmers desire to have true and false values.  In many 
-	modules prior to this implementation the constants �True� and �False� are defined due to this need from the 
-	programmers perspective.  Having everyone define their own Boolean constants can cause confusion because they are 
-	not all defined the same.  The naming conventions vary across the different modules including �FALSE�, �
-	false�, �False�, �F� or �f�.  This makes it difficult to program with because the programmer must remember the 
-	convention for each individual module.  Having a standard constant eliminates this confusion.  Another
-	difficulty with these constants were their exact values.  Sometimes false would be set to �0� and other times 
-	it would be �None�.  Again, having a standard type resolves this issue.  
-	Some of the controversies included return values, constant names, arithmetic operations with Booleans, and
-	inherency.  Most reviewers agreed that str(True) should return True instead of 1.  In the debate about the
-	return type of operator.truth(x) most agreed  that it should return a bool.  However, Tim Peters believed
-	it should return an int.  Guido van Rossum, the author of this PEP, rationalized that the purpose of this
-	operation is to force a Boolean context on its argument and therefore since the Boolean type exists, it should
-	be used.  When it came to naming the constants, some believed that they should be referred to as �true� and 
-	�false� as in many other languages such as C++ and Java.  However, most reviewers believed that they should 
-	be called �True� and �False� because other constants in Python are named in this convention such as �None�.   It
-	was decided that arithimatic operations with type bools would be allowed, although some reviewers believe that
-	�textbook� bools should be implemented and these operations would be illegal.  To make some of these arithmetic 
-	operations work, bool is inherited from int.  
+#Intro
+Daniel Morrissey and Lisa Hobbs
+
+Prior to release version 2.2.2, Python differentiated integer types as most languages do, IE with an int, a short int and a long type. Starting in 2.2.2, as outlined by Python Enhancement Proposal number 237, these three types were reimplimented as one single type, int. This unified type appears to the user as an arbitrary precision integer, limited in size only by the hardware of the running system (this was the previous functionality of the long type pre 2.4). This change diminishes the overhead and errors that can occur by integer overflow and mixed type aritmetic. The change also extends the convenience of python, which already hid the memory relations for types such as strings.
+    
+    1) Implementation
+        A) Phases
+        B) 2 Possible implementations
+            A) an actual union
+            B) short and long types still exist, common superclass integer
+        C) Obstacles
+            A) Underlying C code still has to be aware of short vs long
+            B) 
+    1) Error fixes
+        A) Short, long and int problems
+        B) Vs 32bit and 64bit numbers
+        C) Portability
+    2) Convenience
+        A) User no longer needs to worry about compatibilities, simple
+        B) 
+
+
+
+#Points: 
+        - Simplification on user end
+        - No need for multiple types for extending integer precision
+        - Dependant only on hardware
+        
+        
+#Pros
+        - One type for integers
+        
+        
+#Cons/Obstacles
+        - Underlying c code must still use multiple precisions
+        
+        
+        
+#Versions: 
+        - Implementation begun in 2.2
+        
+##Links:
+http://mail.python.org/pipermail/python-3000/2006-August/003046.html
+http://www.osdata.com/programming/datatypes/arbitraryprecisionintegers.html
+http://docs.python.org/release/2.4.4/whatsnew/node3.html
+http://docs.python.org/release/2.2.1/whatsnew/node6.html

@@ -46,10 +46,14 @@ http://docs.python.org/release/2.4.4/whatsnew/node3.html
 http://docs.python.org/release/2.2.1/whatsnew/node6.html
 
 
-#Lisa's Comments:
-We should elaborate on the implementation, especially in including something about Python 2.3 because they state that the 
-implementation began in 2.2 and then it was final in 2.4, so we should talk about the transition in 2.3.  We should try
-to find some user input to see if the implementation was done well or if it made people go through extra work to debug
-old code to have it be workable with newer versions of the language.  This could determine if there are more things we 
-should add to the cons.  For pros we could include how it makes it easier for a new programmer to learn because they
-don't have to remember the different ranges of numbers.  
+#Implementation:
+The transition process for unifying long integers and integers begun in Python 2.2.. During Python 2.3, a FutureWarning
+would appear during operations that would produce different results after the integer unification.  The returned value 
+would be limited to 32 or 64 bits, depending on the user’s platform.  These warnings went away in 2.4 and instead 
+returned a long integer.  T  In Python 2.3 would trigger a warning on a 32 bit machine if a user tried an expression 
+such as 2 << 32.  This would evaluate to 0.  However, in Python 2.4 this expression would return 8589934592, which is 
+the correct answer. Performing left shifts and long hexadecimal and octal constants were problematic prior to this
+unification.  Performing a left shift on a short could cause the result to lose bits.  Now a long is returned which 
+contains all of the shifted-out bits and giving the correct value.  In previous versions of Python, arithmetic 
+operations would often result in an OverflowError when performed on shorts.  Now it correctly performs the operations
+and returns a long integer. 

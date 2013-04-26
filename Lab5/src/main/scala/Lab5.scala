@@ -232,6 +232,9 @@ object Lab5 {
         }
         e1 match {
           case GetField(Unary(Cast(t), ex1), ex2) => 
+            val x = for((s, (p, ty)) <- params; if(ty == TInterface(s, t))) yield (s, (p, ty))
+            if (x == 0) err(t, ex1)
+          case _ => e1
         }
         // Infer the type of the function body
         val t1 = typeInfer(env2, e1)
@@ -253,8 +256,6 @@ object Lab5 {
           val t = typeInfer(env1, e2)
         	 t
           
-      
-      //AssignVar and AssignFields ?
       case Assign(e1, e2) =>  e1 match {
         case Var(x) => { 
           env.get(x) match {
@@ -622,7 +623,6 @@ object Lab5 {
         }
         case _ => val (mp, ep) = step(m, e1); (mp, GetField(ep, f))
       }
-        
         
        case Assign(e1, e2)  if (!isValue(e2) && isLValue(e1)) =>
         val (mp, ep) = step(m, e2)

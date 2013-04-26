@@ -232,8 +232,9 @@ object Lab5 {
         }
         e1 match {
           case GetField(Unary(Cast(t), ex1), ex2) => 
-            val x = for((s, (p, ty)) <- params; if(ty == TInterface(s, t))) yield (s, (p, ty))
-            if (x == 0) err(t, ex1)
+            val g = for((s, (p, TInterface(x,ty))) <- params) yield (s, (p, ty))
+            val z = for((s, (p, TInterface(x,ty))) <- params; if(ty == t)) yield (s, (p, ty))
+            if (z != g) err(t, ex1)
           case _ => e1
         }
         // Infer the type of the function body

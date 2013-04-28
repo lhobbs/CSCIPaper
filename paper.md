@@ -1,0 +1,4 @@
+Daniel Morrissey and Lisa Hobbs
+
+#Intro
+Prior to release version 2.2.2, Python differentiated integer types as most languages do, IE with an int, a short int and a long type. Starting in 2.2.2, as outlined by Python Enhancement Proposal number 237, these three types were reimplimented as one single type, int. This unified type appears to the user as an arbitrary precision integer, limited in size only by the hardware of the running system (this was the previous functionality of the long type pre 2.4). This change diminishes the overhead and errors that can occur by integer overflow and mixed type aritmetic. The change also extends the convenience of python, which already hid the memory relations for types such as strings.

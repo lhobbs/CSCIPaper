@@ -1,0 +1,10 @@
+
+const algorithm = function(x) { return ((x === "x" || x === "42") && x !== null) };
+
+if(algorithm("x") ) {
+	if(algorithm(42) {
+		println("Hello");
+	} else {
+		println("World");
+	}
+}
